@@ -1,8 +1,8 @@
 # k3s-rancher-autoregister
 
-![FullStackS GmbH](https://static.wixstatic.com/media/09b67c_95629a63c35b44f581d199a824b2e99d~mv2.png/v1/fill/w_494,h_106,al_c,q_85,usm_0.66_1.00_0.01/Logo_final-01-removebg-preview.webp)
+![FullStackS GmbH](https://static.wixstatic.com/media/09b67c_95629a63c35b44f581d199a824b2e99d~mv2.png/v1/fill/w_494,h_106,al_c,q_85,usm_0.66_1.00_0.01/Logo_final-01-removebg-preview.webp =150x)
 
-![OpenNebula Systems](https://opennebula.io/wp-content/uploads/2020/04/opennebula_cloud_logo_white_bg.svg)
+![OpenNebula Systems](https://opennebula.io/wp-content/uploads/2020/04/opennebula_cloud_logo_white_bg.svg =150x)
 
 ## Use Case
 
