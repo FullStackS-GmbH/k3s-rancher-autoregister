@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: default
+  name: rancher-credentials
+stringData:
+  RANCHER_API_ENDPOINT: https://rancher.vie.lab.fullstacks.eu
+  CATTLE_ACCESS_KEY: 
+  CATTLE_SECRET_KEY: 
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  name: register-cluster.sh
+data:
+  register-cluster.sh: |
+    #!/usr/bin/env bash
+
+    # exit on non-zero ; output arguments
+    set -xe
+
+    echo ${K3S_CLUSTER_NAME}
+
+    # check rancher api
+    while true; do
+      curl -sLk ${RANCHER_API_ENDPOINT}/ping &&
+    break
+      sleep 10
+    done
+
+    # check if cluster is already running an cattle agent
+    if ! kubectl get namespace cattle-system; then
+
+      echo ${K3S_CLUSTER_NAME}
+
+      # create downstream cluster via api
+      CREATE_CLUSTER=$(curl -s "${RANCHER_API_ENDPOINT}/v3/cluster" \
+      -H "Authorization: Bearer ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
+      -X POST \
+      -H 'content-type: application/json' \
+      --data-binary '{"type":"cluster","name":"'${K3S_CLUSTER_NAME}'"}')
+
+      # get cluster id of created downstream cluster
+      CLUSTER_ID=$(echo $CREATE_CLUSTER | jq .id | sed -e 's/^"//'  -e 's/"$//')
+
+      # get cluster-import command
+      CLUSTER_IMPORT_COMMAND=$(curl -s "${RANCHER_API_ENDPOINT}/v3/clusterregistrationtoken" \
+      -H 'content-type: application/json' \
+      -H "Authorization: Bearer ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
+      -X POST \
+      --data-binary '{"type":"clusterRegistrationToken","clusterId":"'$CLUSTER_ID'"}' | jq -r '.command')
+
+      # apply import command via kubectl
+      bash -c "${CLUSTER_IMPORT_COMMAND}"
+
+    fi
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: register-cluster
+subjects:
+  - kind: ServiceAccount
+    name: register-cluster
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: default
+  name: register-cluster
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: default
+  name: register-cluster
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: register-cluster
+      restartPolicy: Never
+      containers:
+        - name: register-k3s-downsteam-cluster
+          image: fullstacksgmbh/k3srancherautoregister:latest
+          command:
+            - bash
+            - /init/register-cluster.sh
+          volumeMounts:
+            - mountPath: /init
+              name: register-cluster
+          env:
+            - name: K3S_CLUSTER_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          envFrom:
+            - secretRef:
+                name: rancher-credentials
+      volumes:
+        - name: register-cluster
+          configMap:
+            name: register-cluster.sh
