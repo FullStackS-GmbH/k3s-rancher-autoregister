@@ -28,8 +28,13 @@ In production we run those automations with a different approach.
 
 ### K3S Manifest
 
+Place the YAML Manifest under `/var/lib/rancher/k3s/server/manifests`
+
 ### Secret
 
-### ConfigMap
+Populate the secret with
 
-### Pod Definiton
+- `RANCHER_API_ENDPOINT:` URL of your Rancher Server
+- `CATTLE_ACCESS_KEY:` User Part of API Token
+- `CATTLE_SECRET_KEY:` Password Part of API Token
+
