@@ -4,7 +4,7 @@ metadata:
   namespace: default
   name: rancher-credentials
 stringData:
-  RANCHER_API_ENDPOINT: https://rancher.vie.lab.fullstacks.eu
+  RANCHER_API_ENDPOINT: 
   CATTLE_ACCESS_KEY: 
   CATTLE_SECRET_KEY: 
 ---
