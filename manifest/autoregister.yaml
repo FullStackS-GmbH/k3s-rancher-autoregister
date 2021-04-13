@@ -45,13 +45,17 @@ data:
       # get cluster id of created downstream cluster
       CLUSTER_ID=$(echo $CREATE_CLUSTER | jq .id | sed -e 's/^"//'  -e 's/"$//')
 
-      # get cluster-import command
-      CLUSTER_IMPORT_COMMAND=$(curl -s "${RANCHER_API_ENDPOINT}/v3/clusterregistrationtoken" \
-      -H 'content-type: application/json' \
-      -H "Authorization: Bearer ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
-      -X POST \
-      --data-binary '{"type":"clusterRegistrationToken","clusterId":"'$CLUSTER_ID'"}' | jq -r '.command')
-
+      CLUSTER_IMPORT_COMMAND=null
+      while [[ ${CLUSTER_IMPORT_COMMAND} = "null" ]]
+      do
+        CLUSTER_IMPORT_COMMAND=$(curl -s "${RANCHER_API_ENDPOINT}/v3/clusterregistrationtoken" \
+        -H 'content-type: application/json' \
+        -H "Authorization: Bearer ${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
+        -X POST \
+        --data-binary '{"type":"clusterRegistrationToken","clusterId":"'$CLUSTER_ID'"}' | jq -r '.command')
+        sleep 5
+      done
+      
       # apply import command via kubectl
       bash -c "${CLUSTER_IMPORT_COMMAND}"
 
